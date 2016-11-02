@@ -18,6 +18,9 @@ class File
     $this->pages['pos2'] = $position;
   }
 
+  /**
+   * @return false|Position;
+   */
   public function getPos1()
   {
     if (isset($this->pages['pos1'])) {
@@ -25,6 +28,9 @@ class File
     } else return false;
   }
 
+  /**
+   * @return false|Position;
+   */
   public function getPos2()
   {
     if (isset($this->pages['pos2'])) {

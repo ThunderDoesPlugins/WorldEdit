@@ -38,6 +38,8 @@ class CommandManager
     $this->getServer()->getCommandMap()->register('wepos1', new Pos1Command('pos1', $cmd[1], $cmd[2], $cmd[3]));
     $cmd = self::$commands['pos2'];
     $this->getServer()->getCommandMap()->register('wepos2', new Pos2Command('pos2', $cmd[1], $cmd[2], $cmd[3]));
+    $cmd = self::$commands['pos'];
+    $this->getServer()->getCommandMap()->register('pos', new PosCommand('pos', $cmd[1], $cmd[2], $cmd[3]));
     // print_r(self::$commands);
   }
 
