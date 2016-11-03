@@ -66,10 +66,11 @@ class CommandHandler
           $log[] = self::prefixNotice . " Trying to load world {$lvn}.";
           if ($this->getServer()->loadLevel($lvn) AND $lv = $this->getServer()->getLevelByName($lvn) AND $lv instanceof Level)
             $log[] = self::prefixNotice . " loaded world {$lvn}";
-          elseif($sender instanceof Player) $log[] = self::prefixError . " Invalid level ($lvn) falling back using your current position.";
+          elseif ($sender instanceof Player) $log[] = self::prefixError . " Invalid level ($lvn) falling back using your current position.";
           else {
             $log[] = self::prefixError . " Invalid level ($lvn).";
             $this->sendMassages($sender, '', $log);
+
             return;
           }
         }
@@ -82,6 +83,7 @@ class CommandHandler
       $log[] = self::prefixNotice . " Usage /pos <x> <y> <x> <world>";
       if ($sender instanceof ConsoleCommandSender) {
         $this->sendMassages($sender, '', $log);
+
         return;
       } else $log[] = self::prefixNotice . " Incomplete parameter falling back using your current position.";
     }
@@ -95,12 +97,19 @@ class CommandHandler
     if (isset($loc)) {
       $vec = $loc->round();
       $loc->setComponents($vec->x, $vec->y, $vec->z);
+      $name = $sender->getName();
       if ($on == 1) {
-        $log[] = self::prefixInfo . "(info) Setting your #1 position to X: {$loc->x}, Y: {$loc->y}, Z: {$loc->z} at World : {$loc->getLevel()->getName()}";
-        $this->cabinet[$sender->getName()]->setPos1($loc);
+        $log[] = self::prefixInfo . " Setting your #1 position to X: {$loc->x}, Y: {$loc->y}, Z: {$loc->z} at World : {$loc->getLevel()->getName()}";
+        $this->cabinet[$name]->setPos1($loc);
       } elseif ($on == 2) {
-        $log[] = self::prefixInfo . "(info) Setting your #2 position to X: {$loc->x}, Y: {$loc->y}, Z: {$loc->z} at World : {$loc->getLevel()->getName()}";
-        $this->cabinet[$sender->getName()]->setPos2($loc);
+        $log[] = self::prefixInfo . " Setting your #2 position to X: {$loc->x}, Y: {$loc->y}, Z: {$loc->z} at World : {$loc->getLevel()->getName()}";
+        $this->cabinet[$name]->setPos2($loc);
+      }
+      if (
+        $this->cabinet[$name]->getPos1() instanceof Position AND $this->cabinet[$name]->getPos2() instanceof Position
+      ) {
+        $log[] = self::prefixInfo . " Selected " .
+          $this->getBuilder()->count($this->cabinet[$name]->getPos1(), $this->cabinet[$name]->getPos2()) . " Blocks.";
       }
     }
     $this->sendMassages($sender, '', $log);
@@ -128,15 +137,58 @@ class CommandHandler
       if ($userC->getPos1() instanceof Position) {
         $loc = $userC->getPos1();
         $msg .= self::prefixInfo . "Pos1: X:" . $loc->getX() . " Y:" . $loc->y . " Z:" . $loc->z . " World:" . $loc->level->getName() . "\n";
-      } else $msg .= self::prefixNotice . "Pos1: [Not Set]\n";
+      } else $msg .= self::prefixInfo . "Pos1: [Not Set]\n";
       if ($userC->getPos2() instanceof Position) {
         $loc = $userC->getPos2();
         $msg .= self::prefixInfo . "Pos2: X:" . $loc->getX() . " Y:" . $loc->y . " Z:" . $loc->z . " World:" . $loc->level->getName() . "\n";
-      } else $msg .= self::prefixNotice . "Pos2: [Not Set]\n";
+      } else $msg .= self::prefixInfo . "Pos2: [Not Set]\n";
       $sender->sendMessage($msg);
     } else {
-      $sender->sendMessage(self::prefixNotice . " The specified user have not set any pos.");
+      $sender->sendMessage(self::prefixInfo . " The specified user have not set any pos.");
     }
+  }
+
+  public function onSet(CommandSender $sender, $commandLabel, array $args)
+  {
+    if (!$sender->hasPermission($this->getCommandManager()->getAllCommands()['set'][4])) {
+      $sender->sendMessage(self::prefixError . self::msg_noPerm);
+
+      return;
+    }
+    $name = $sender->getName();
+    $rt = [];
+    if (
+      !$this->cabinet->fileExist($name) AND
+      !$this->cabinet[$name]->getPos1() instanceof Position AND !$this->cabinet[$name]->getPos2() instanceof Position
+    ) $rt[] = (self::prefixInfo . " Please make a selection first.");
+    if ($this->cabinet[$name]->getPos1() instanceof Position AND $this->cabinet[$name]->getPos1()->getLevel()->getName() !== $this->cabinet[$name]->getPos2()->getLevel()->getName())
+      $rt[] = (self::prefixInfo . " Please make the selection in the same world.");
+
+    if (isset($args[0]))
+      $id = $args[0];
+    else {
+      $rt[] = (self::prefixError . " Please provide ID.");
+    }
+
+    if (count($rt) > 0) {
+      $this->sendMassages($sender, '', $rt);
+
+      return;
+    }
+
+    if (isset($args[1]))
+      $meta = $args[1];
+    else $meta = null;
+
+    if (isset($args[2]))
+      $update = $args[2];
+    else $update = false;
+    $this->getBuilder()->buildBox(
+      $this->cabinet[$name]->getPos1()->getLevel(),
+      $this->cabinet[$name]->getPos1(), $this->cabinet[$name]->getPos2(),
+      $id, $meta, $update, $ret
+    );
+    $sender->sendMessage(self::prefixOk . " Took $ret[1]s to set $ret[0] blocks to " . $id);
   }
 
   public function sendMassages(CommandSender $player, $prefix, array$massages)

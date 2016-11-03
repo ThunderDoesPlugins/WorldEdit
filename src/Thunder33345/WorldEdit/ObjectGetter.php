@@ -3,7 +3,7 @@
 namespace Thunder33345\WorldEdit;
 
 use pocketmine\Server;
-use Thunder33345\WorldEdit\Commands\Builder;
+use Thunder33345\WorldEdit\Builder;
 use Thunder33345\WorldEdit\Commands\CommandManager;
 
 trait ObjectGetter

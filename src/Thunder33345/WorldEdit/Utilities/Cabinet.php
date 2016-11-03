@@ -7,6 +7,11 @@ class Cabinet implements \ArrayAccess
   /** @var File[] */
   private $drawer = [];
 
+  public function fileExist($name)
+  {
+    return isset($this->drawer[$name]);
+  }
+
   public function offsetExists($offset)
   {
     return isset($this->drawer[$offset]);
